@@ -1,12 +1,21 @@
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function MedicaoCard({ sistolica, diastolica, data, hora }) {
-  // Função para classificar a pressão
+  // Função para classificar a pressão conforme a Sociedade Brasileira de Cardiologia
   const getClassificacao = () => {
-    if (sistolica < 120 && diastolica < 80) return { texto: 'Normal', cor: '#2ECC71' };
-    if (sistolica < 130 && diastolica < 85) return { texto: 'Normal Alta', cor: '#F1C40F' };
-    if (sistolica < 140 || diastolica < 90) return { texto: 'Hipertensão Leve', cor: '#E67E22' };
-    return { texto: 'Hipertensão', cor: '#E63946' };
+    if (sistolica < 90 || diastolica < 60)
+      return { texto: 'Pressão Baixa', cor: '#3498DB' };
+    if (sistolica < 120 && diastolica < 80)
+      return { texto: 'Normal', cor: '#2ECC71' };
+    if (sistolica < 130 && diastolica < 85)
+      return { texto: 'Elevada', cor: '#F1C40F' };
+    if (sistolica < 140 && diastolica < 90)
+      return { texto: 'Hipertensão Estágio 1', cor: '#E67E22' };
+    if (sistolica < 160 && diastolica < 100)
+      return { texto: 'Hipertensão Estágio 2', cor: '#E63946' };
+    if (sistolica >= 180 || diastolica >= 110)
+      return { texto: 'Crise Hipertensiva', cor: '#8E44AD' };
+    return { texto: 'Hipertensão Grave', cor: '#C0392B' };
   };
 
   const classificacao = getClassificacao();

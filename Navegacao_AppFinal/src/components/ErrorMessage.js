@@ -1,15 +1,21 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-export default function ErrorMessage({ message, onRetry, icon = '' }) {
+export default function ErrorMessage({
+   message,
+   onRetry,
+   title = 'Ops! Algo deu errado',
+   icon = '⚠️',
+   buttonText = 'Tentar Novamente',
+}) {
    return (
       <View style={styles.container}>
          <Text style={styles.icon}>{icon}</Text>
-         <Text style={styles.title}>Ops! Algo deu errado</Text>
+         <Text style={styles.title}>{title}</Text>
          <Text style={styles.message}>{message}</Text>
 
          {onRetry && (
             <TouchableOpacity style={styles.button} onPress={onRetry}>
-               <Text style={styles.buttonText}>Tentar Novamente</Text>
+               <Text style={styles.buttonText}>{buttonText}</Text>
             </TouchableOpacity>
          )}
       </View>

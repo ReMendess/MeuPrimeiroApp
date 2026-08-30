@@ -4,22 +4,59 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-nativ
 export default function FormularioMedicao({ onAddMedicao }) {
   const [sistolica, setSistolica] = useState('');
   const [diastolica, setDiastolica] = useState('');
+  const [erros, setErros] = useState({});
+  const [salvando, setSalvando] = useState(false);
 
-  const handleSubmit = () => {
-    if (!sistolica || !diastolica) return;
+  const validar = () => {
+    const novosErros = {};
+
+    if (!sistolica.trim()) {
+      novosErros.sistolica = 'Informe a pressão sistólica (máx).';
+    } else {
+      const valor = parseInt(sistolica, 10);
+      if (isNaN(valor) || valor < 70 || valor > 250) {
+        novosErros.sistolica = 'Use um valor entre 70 e 250.';
+      }
+    }
+
+    if (!diastolica.trim()) {
+      novosErros.diastolica = 'Informe a pressão diastólica (mín).';
+    } else {
+      const valor = parseInt(diastolica, 10);
+      if (isNaN(valor) || valor < 40 || valor > 150) {
+        novosErros.diastolica = 'Use um valor entre 40 e 150.';
+      }
+    }
+
+    setErros(novosErros);
+    return Object.keys(novosErros).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (salvando) return;
+    if (!validar()) return;
+
+    setSalvando(true);
 
     const agora = new Date();
     const medicao = {
       id: Date.now(),
-      sistolica: parseInt(sistolica),
-      diastolica: parseInt(diastolica),
+      sistolica: parseInt(sistolica, 10),
+      diastolica: parseInt(diastolica, 10),
       data: agora.toLocaleDateString('pt-BR'),
       hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     };
 
-    onAddMedicao(medicao);
-    setSistolica('');
-    setDiastolica('');
+    try {
+      await onAddMedicao(medicao);
+      setSistolica('');
+      setDiastolica('');
+      setErros({});
+    } catch (e) {
+      // A tela trata o erro (ex.: falha de conexão)
+    } finally {
+      setSalvando(false);
+    }
   };
 
   return (
@@ -30,13 +67,15 @@ export default function FormularioMedicao({ onAddMedicao }) {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Sistólica (máx)</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, erros.sistolica && styles.inputErro]}
             value={sistolica}
             onChangeText={setSistolica}
             placeholder="120"
             keyboardType="numeric"
             maxLength={3}
+            editable={!salvando}
           />
+          {erros.sistolica && <Text style={styles.textoErro}>{erros.sistolica}</Text>}
         </View>
 
         <Text style={styles.separator}>x</Text>
@@ -44,20 +83,28 @@ export default function FormularioMedicao({ onAddMedicao }) {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Diastólica (mín)</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, erros.diastolica && styles.inputErro]}
             value={diastolica}
             onChangeText={setDiastolica}
             placeholder="80"
             keyboardType="numeric"
             maxLength={3}
+            editable={!salvando}
           />
+          {erros.diastolica && <Text style={styles.textoErro}>{erros.diastolica}</Text>}
         </View>
       </View>
 
       <Text style={styles.hint}>Exemplo: 120 x 80 mmHg</Text>
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Registrar Medição</Text>
+      <TouchableOpacity
+        style={[styles.button, salvando && styles.buttonDesabilitado]}
+        onPress={handleSubmit}
+        disabled={salvando}
+      >
+        <Text style={styles.buttonText}>
+          {salvando ? 'Salvando...' : 'Registrar Medição'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -85,7 +132,7 @@ const styles = StyleSheet.create({
 
   inputRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
     marginBottom: 8
   },
@@ -112,10 +159,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   },
 
+  inputErro: {
+    borderColor: '#E63946',
+    backgroundColor: '#FDECEC'
+  },
+
+  textoErro: {
+    fontSize: 10,
+    color: '#E63946',
+    marginTop: 4,
+    textAlign: 'center'
+  },
+
   separator: {
     fontSize: 24,
     color: '#999',
-    marginHorizontal: 12
+    marginHorizontal: 12,
+    marginTop: 34
   },
 
   hint: {
@@ -130,6 +190,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: 'center'
+  },
+
+  buttonDesabilitado: {
+    backgroundColor: '#b0b877'
   },
 
   buttonText: {

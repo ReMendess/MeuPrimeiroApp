@@ -17,3 +17,7 @@ O app começou como um serviço simples de acompanhamento médico, que permitiu 
 <img src="assets/Loading.png" widht="150">
 <img src="assets/Profile.png" widht="150">
 
+Evolui o app para novas funcionalidades, utilizando a camera, microfone, novas formas de navegação e de interação com o usuário
+
+<img src="assets/Tabs.png" widht="150">
+<img src="assets/Sucess.png" widht="150">

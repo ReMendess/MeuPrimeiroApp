@@ -19,6 +19,22 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permitir que o MeuPrimeiroApp acesse a câmera para registrar fotos.",
+          "microphonePermission": "Permitir que o MeuPrimeiroApp acesse o microfone para gravar áudio.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Permitir que o MeuPrimeiroApp acesse o microfone para gravar áudio."
+        }
+      ]
+    ]
   }
 }
