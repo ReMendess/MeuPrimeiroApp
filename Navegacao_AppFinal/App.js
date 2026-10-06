@@ -1,92 +1,131 @@
-import { Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createDrawerNavigator } from '@react-navigation/drawer';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StatusBar } from 'expo-status-bar';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import storage from './src/utils/storage';
 
-// Telas
+// Telas de autenticação
+import LoginScreen from './src/screens/LoginScreen';
+import CadastroScreen from './src/screens/CadastroScreen';
+
+// Telas do app
 import HomeScreen from './src/screens/HomeScreen';
 import NovaMedicaoScreen from './src/screens/NovaMedicaoScreen';
 import CameraScreen from './src/screens/CameraScreen';
 import AudioScreen from './src/screens/AudioScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 
-// Contexto global
+import LoadingSpinner from './src/components/LoadingSpinner';
 import { RegistrosProvider } from './src/context/RegistrosContext';
 
-const Drawer = createDrawerNavigator();
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
-const iconEmoji = (emoji) => ({ color, size }) => (
-   <Text style={{ fontSize: size * 0.6, color }}>{emoji}</Text>
+// Ícone de aba usando emoji (mesmo padrão usado antes na barra lateral)
+const iconEmoji = (emoji) => ({ color }) => (
+   <Text style={{ fontSize: 20, color }}>{emoji}</Text>
 );
 
-export default function App() {
+const headerVermelho = { headerStyle: { backgroundColor: '#E63946' }, headerTintColor: '#fff' };
+const headerRoxo = { headerStyle: { backgroundColor: '#5856D6' }, headerTintColor: '#fff' };
+
+// Navegador de autenticação (Login/Cadastro)
+function AuthNavigator({ onLogin }) {
    return (
-      <GestureHandlerRootView style={styles.flex}>
-         <RegistrosProvider>
-            <NavigationContainer>
-               <StatusBar style="light" />
-               {/* Barra lateral de navegação (drawer) */}
-               <Drawer.Navigator
-                  screenOptions={{
-                     headerStyle: styles.header,
-                     headerTintColor: '#fff',
-                     headerTitleStyle: styles.headerTitle,
-                     headerTitleAlign: 'center',
-                     drawerActiveTintColor: '#161482',
-                     drawerInactiveTintColor: '#555',
-                     drawerActiveBackgroundColor: '#E8E8FA',
-                     drawerStyle: styles.drawer,
-                     drawerLabelStyle: styles.drawerLabel,
-                     drawerItemStyle: styles.drawerItem,
-                  }}
-               >
-                  <Drawer.Screen
-                     name="Home"
-                     component={HomeScreen}
-                     options={{ title: 'Início', drawerIcon: iconEmoji('🏠') }}
-                  />
-                  <Drawer.Screen
-                     name="NovaMedicao"
-                     component={NovaMedicaoScreen}
-                     options={{ title: 'Registrar Medição', drawerIcon: iconEmoji('➕') }}
-                  />
-                  <Drawer.Screen
-                     name="Camera"
-                     component={CameraScreen}
-                     options={{ title: 'Câmera', drawerIcon: iconEmoji('📷') }}
-                  />
-                  <Drawer.Screen
-                     name="Audio"
-                     component={AudioScreen}
-                     options={{ title: 'Áudio', drawerIcon: iconEmoji('🎙️') }}
-                  />
-                  <Drawer.Screen
-                     name="Perfil"
-                     component={ProfileScreen}
-                     options={{ title: 'Perfil', drawerIcon: iconEmoji('👤') }}
-                  />
-               </Drawer.Navigator>
-            </NavigationContainer>
-         </RegistrosProvider>
-      </GestureHandlerRootView>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+         <Stack.Screen name="Login">
+            {(props) => <LoginScreen {...props} onLogin={onLogin} />}
+         </Stack.Screen>
+         <Stack.Screen name="Cadastro" component={CadastroScreen} />
+      </Stack.Navigator>
    );
 }
 
-const styles = StyleSheet.create({
-   flex: { flex: 1 },
-   header: { backgroundColor: '#161482' },
-   headerTitle: { fontWeight: 'bold', fontSize: 18 },
-   drawer: {
-      backgroundColor: '#fafafa',
-      width: 280,
-   },
-   drawerLabel: {
-      fontSize: 15,
-      fontWeight: '600',
-   },
-   drawerItem: {
-      borderRadius: 10,
-      marginHorizontal: 8,
-   },
-});
+// Navegador principal (App autenticado)
+function TabNavigator({ onLogout }) {
+   return (
+      <Tab.Navigator
+         screenOptions={{
+            tabBarActiveTintColor: '#E63946',
+            tabBarInactiveTintColor: '#8E8E93',
+         }}
+      >
+         <Tab.Screen
+            name="Início"
+            component={HomeScreen}
+            options={{ ...headerVermelho, tabBarIcon: iconEmoji('🏠') }}
+         />
+         <Tab.Screen
+            name="Medir Pressão"
+            component={NovaMedicaoScreen}
+            options={{ ...headerVermelho, tabBarIcon: iconEmoji('➕') }}
+         />
+         <Tab.Screen
+            name="Câmera"
+            component={CameraScreen}
+            options={{ ...headerVermelho, tabBarIcon: iconEmoji('📷') }}
+         />
+         <Tab.Screen
+            name="Áudio"
+            component={AudioScreen}
+            options={{ ...headerVermelho, tabBarIcon: iconEmoji('🎙️') }}
+         />
+         <Tab.Screen
+            name="Perfil"
+            options={{ ...headerRoxo, tabBarIcon: iconEmoji('👤') }}
+         >
+            {(props) => <ProfileScreen {...props} onLogout={onLogout} />}
+         </Tab.Screen>
+      </Tab.Navigator>
+   );
+}
+
+export default function App() {
+   const [carregando, setCarregando] = useState(true);
+   const [usuarioLogado, setUsuarioLogado] = useState(null);
+
+   // Restaura a sessão salva ao iniciar o app
+   useEffect(() => {
+      let ativo = true;
+
+      (async () => {
+         try {
+            const usuarioJSON = await storage.getItem('@usuario_logado');
+            if (ativo && usuarioJSON) {
+               setUsuarioLogado(JSON.parse(usuarioJSON));
+            }
+         } catch (error) {
+            console.error('[App] Erro ao verificar login:', error);
+         } finally {
+            if (ativo) setCarregando(false);
+         }
+      })();
+
+      return () => {
+         ativo = false;
+      };
+   }, []);
+
+   // Chamado pelo LoginScreen logo após salvar a sessão
+   const handleLogin = (usuario) => setUsuarioLogado(usuario);
+
+   // Chamado pelo ProfileScreen logo após remover a sessão
+   const handleLogout = () => setUsuarioLogado(null);
+
+   if (carregando) {
+      return <LoadingSpinner message="Carregando..." />;
+   }
+
+   return (
+      <NavigationContainer>
+         {usuarioLogado ? (
+            <RegistrosProvider>
+               <TabNavigator onLogout={handleLogout} />
+            </RegistrosProvider>
+         ) : (
+            <AuthNavigator onLogin={handleLogin} />
+         )}
+      </NavigationContainer>
+   );
+}

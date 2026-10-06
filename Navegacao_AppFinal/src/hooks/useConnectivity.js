@@ -9,9 +9,11 @@ export default function useConnectivity() {
    const networkState = useNetworkState();
 
    return {
-      // Conectado se há rede ativa. Em plataformas onde `isInternetReachable`
-      // não é informado (ex.: web ou iOS), basta que `isConnected` seja true.
-      isConnected: networkState.isConnected === true && networkState.isInternetReachable !== false,
+      // Conectado se não houver indicação explícita de falta de rede.
+      // Enquanto o estado ainda não foi medido (isConnected === undefined),
+      // assumimos conectado para não bloquear o usuário no primeiro instante.
+      isConnected:
+         networkState.isConnected !== false && networkState.isInternetReachable !== false,
       type: networkState.type,
       networkState,
    };
